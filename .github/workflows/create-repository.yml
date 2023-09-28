@@ -1,0 +1,131 @@
+name: Create GitHub Repository
+run-name: Create ${{ inputs.repository-name }} repository by ${{ github.actor }}
+on:
+  workflow_dispatch:
+    inputs:
+      repository-name:
+        description: repository name
+        required: true
+        type: string
+      repository-type:
+        description: repository type
+        required: true
+        type: choice
+        options:
+          - microservice
+          - lib
+      archetype-version:
+        description: |
+          archetypeVersion - required for microservice
+        required: false
+        default: 1.8.0
+        type: number
+      class-prefix:
+        description: |
+          classPrefix - required for microservice
+        required: false
+        type: string
+      framework-version:
+        description: |
+          arcoBootVersion - required for microservice
+        required: false
+        default: 3.8.0
+        type: number
+      branch-protection:
+        description: |
+          add branch protection rule
+        required: false
+        default: false
+        type: boolean
+
+defaults:
+  run:
+    working-directory: scripts
+
+env:
+  JAVA_DISTRIBUTION: 'temurin'
+  JAVA_VERSION: 11
+  MAVEN_VERSION: 3.8.2
+  GH_CLI_VERSION: 2.32.0
+  GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
+  GITHUB_REPO_NAME: ${{ inputs.repository-name }}
+  REPOSITORY_TYPE: ${{ inputs.repository-type }}
+  SETTINGS_XML_PATH: ${{ github.workspace }}/microservices/settings.xml
+
+jobs:
+  create-github-repository:
+    name: Create github repository for ${{ inputs.repository-name }} ${{ inputs.repository-type }}
+    runs-on: [self-hosted, deploy]
+    env:
+      GITHUB_ORG: to-ge-da
+      REPOSITORY_SUFFIX: ${{ inputs.repository-name }}--${{ inputs.repository-type }}
+      COMMIT_MESSAGE: Initial commit ${{ inputs.repository-name }} ${{ inputs.repository-type }} [skip actions]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4.5
+        with:
+          maven-version: ${{ env.MAVEN_VERSION }}
+
+      - name: Create github repository for ${{ inputs.repository-name }}--${{ inputs.repository-type }}
+        id: create-repository
+        run: |
+          echo "SCRIPT_OUTPUT=$(sh github-create-repository.sh ${{ env.GITHUB_REPO_NAME }} ${{ env.REPOSITORY_TYPE }})" >> $GITHUB_OUTPUT
+          echo "TIMESTAMP=$(date '+%F %H:%M')" >> $GITHUB_OUTPUT
+
+      - name: Handle script success output
+        id: handle-success-output
+        if: ${{ contains(steps.create-repository.outputs.SCRIPT_OUTPUT, 'Created') }}
+        run: |
+          echo "### :running: by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "### :alarm_clock: created timestamp: ${{ steps.create-repository.outputs.TIMESTAMP }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Script output: ${{ steps.create-repository.outputs.SCRIPT_OUTPUT }} :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo ":arrow_forward: ${{ env.REPOSITORY_URL }} :link:" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        env:
+          REPOSITORY_URL: https://github.com/${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
+
+      - name: Checkout new repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN_WORKFLOW }}
+          repository: ${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
+          path: automation/scripts/new-repository
+
+  create-branch-protection:
+    name: Add branch protection rules for ${{ inputs.repository-name }} repository
+    runs-on: [self-hosted, deploy]
+    if: inputs.branch-protection
+    needs: create-github-repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup GitHub CLI
+        uses: ksivamuthu/actions-setup-gh-cli@main
+        with:
+          version: ${{ env.GH_CLI_VERSION }}
+
+      - name: Auth GitHub CLI
+        run: |
+          echo ${{ env.GITHUB_AUTH_TOKEN }} | gh auth login --with-token
+
+      - name: Add branch protection rules for ${{ inputs.repository-name }} repository
+        id: create-branch
+        run: |
+          echo "SCRIPT_OUTPUT=$(sh github-branch-protection.sh ${{ env.GITHUB_REPO_NAME }} ${{ env.REPOSITORY_TYPE }})" >> $GITHUB_OUTPUT
+
+      - name: Branch protection rules output
+        if: ${{ success() }}
+        id: output
+        run: |
+          echo ${{ toJSON(steps.create-branch.outputs.SCRIPT_OUTPUT) }}
