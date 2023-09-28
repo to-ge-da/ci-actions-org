@@ -54,7 +54,7 @@ env:
 
 jobs:
   create-github-repository:
-    name: Create github repository for ${{ inputs.repository-name }} ${{ inputs.repository-type }}
+    name: Create GitHub repository
     runs-on: ubuntu-latest
     env:
       GITHUB_ORG: to-ge-da
@@ -75,7 +75,7 @@ jobs:
         with:
           maven-version: ${{ env.MAVEN_VERSION }}
 
-      - name: Create github repository for ${{ inputs.repository-name }}--${{ inputs.repository-type }}
+      - name: Create GitHub repository
         id: create-repository
         run: |
           echo "SCRIPT_OUTPUT=$(sh github-create-repository.sh ${{ env.GITHUB_REPO_NAME }} ${{ env.REPOSITORY_TYPE }})" >> $GITHUB_OUTPUT
@@ -94,11 +94,11 @@ jobs:
           REPOSITORY_URL: https://github.com/${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
 
       - name: Checkout new repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN_WORKFLOW }}
           repository: ${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
-          path: automation/scripts/new-repository
+          path: scripts/new-repository
 
   create-branch-protection:
     name: Add branch protection rules for ${{ inputs.repository-name }} repository
