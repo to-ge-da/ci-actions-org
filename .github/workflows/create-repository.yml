@@ -55,7 +55,7 @@ env:
 jobs:
   create-github-repository:
     name: Create github repository for ${{ inputs.repository-name }} ${{ inputs.repository-type }}
-    runs-on: [self-hosted, deploy]
+    runs-on: ubuntu-latest
     env:
       GITHUB_ORG: to-ge-da
       REPOSITORY_SUFFIX: ${{ inputs.repository-name }}--${{ inputs.repository-type }}
@@ -102,7 +102,7 @@ jobs:
 
   create-branch-protection:
     name: Add branch protection rules for ${{ inputs.repository-name }} repository
-    runs-on: [self-hosted, deploy]
+    runs-on: ubuntu-latest
     if: inputs.branch-protection
     needs: create-github-repository
 
