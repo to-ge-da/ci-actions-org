@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_ORG: to-ge-da
-      REPOSITORY_SUFFIX: ${{ inputs.repository-name }}--${{ inputs.repository-type }}
+      REPOSITORY_NAME: ${{ inputs.repository-name }}-${{ inputs.repository-type }}
       COMMIT_MESSAGE: Initial commit ${{ inputs.repository-name }} ${{ inputs.repository-type }} [skip actions]
 
     steps:
@@ -91,13 +91,13 @@ jobs:
           echo ":arrow_forward: ${{ env.REPOSITORY_URL }} :link:" >> $GITHUB_STEP_SUMMARY
           exit 0
         env:
-          REPOSITORY_URL: https://github.com/${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
+          REPOSITORY_URL: https://github.com/${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_NAME }}
 
       - name: Checkout new repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN_WORKFLOW }}
-          repository: ${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_SUFFIX }}
+          repository: ${{ env.GITHUB_ORG }}/${{ env.REPOSITORY_NAME }}
           path: scripts/new-repository
 
   create-branch-protection:
