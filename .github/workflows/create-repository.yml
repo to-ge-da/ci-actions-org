@@ -78,7 +78,7 @@ jobs:
       - name: Create GitHub repository
         id: create-repository
         run: |
-          echo "SCRIPT_OUTPUT=$(sh github-create-repository.sh ${{ env.GITHUB_REPO_NAME }} ${{ env.REPOSITORY_TYPE }})" >> $GITHUB_OUTPUT
+          echo "SCRIPT_OUTPUT=$(./github-create-repository.sh ${{ env.GITHUB_REPO_NAME }} ${{ env.REPOSITORY_TYPE }})" >> $GITHUB_OUTPUT
           echo "TIMESTAMP=$(date '+%F %H:%M')" >> $GITHUB_OUTPUT
 
       - name: Handle script success output
