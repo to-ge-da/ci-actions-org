@@ -34,7 +34,7 @@ jobs:
       - name: Check GitLab repository
         id: gitlab-repo-exists
         run: |
-          echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTP
+          echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
         shell: bash
         env:
           TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
