@@ -34,6 +34,7 @@ jobs:
       - name: Check GitLab repository
         run: |
           curl \
-            -H "PRIVATE-TOKEN: ${GITLAB_AUTH_TOKEN}" \
-            -s "${GITLAB_API_URL}/${{ env.GITLAB_PROJECT_ID }}" | jq .
+            -H "PRIVATE-TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}" \
+            -s "${{ env.GITLAB_API_URL }}/${{ env.GITLAB_PROJECT_ID }}" \
+            | jq -r '.name'
         shell: bash
