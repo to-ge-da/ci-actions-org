@@ -3,11 +3,16 @@ run-name: Migrate repository from GitLab to GitHub by ${{ github.actor }}
 on:
   workflow_dispatch:
     inputs:
-      repository-name:
+      run-migrate:
         description: Migrate repository
         required: true
         default: false
         type: boolean
+      gitlab-project-id:
+        description: |
+          GitLab project ID
+        required: false
+        type: string
 
 env:
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
@@ -23,9 +28,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup arkade
+        uses: alexellis/arkade-get@master
+        with:
+          jq: latest
+
       - name: Check GitLab repository
         run: |
           curl \
             -H "PRIVATE-TOKEN: ${GITLAB_AUTH_TOKEN}" \
-            -s "${GITLAB_API_URL}/23759432"
+            -s "${GITLAB_API_URL}/23759432" | jq .
         shell: bash
