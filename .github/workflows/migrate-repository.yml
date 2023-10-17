@@ -75,9 +75,11 @@ jobs:
     env:
       GITHUB_ORG_NAME: to-ge-da
       GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_NAME }}
+    outputs:
+      GITHUB_FULL_NAME: ${{ env.GITHUB_ORG_NAME }}/${{ env.GITHUB_REPOSITORY_NAME }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout github-rest-api repository
         uses: actions/checkout@v4
         with:
           repository: lbrealdev/github-rest-api
@@ -101,12 +103,22 @@ jobs:
       - github-create-repo
     env:
       GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_CLONE_URL }}
+      GITHUB_TARGET_REPOSITORY: ${{ needs.github-create-repo.outputs.GITHUB_FULL_NAME }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout GitHub target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITHUB_TARGET_REPOSITORY }}
+          token: ${{ env.GITHUB_AUTH_TOKEN }}
+          path: target
+
       - name: Debug this Job
         run: |
           echo "${{ env.GITLAB_SOURCE_REPOSITORY }}"
+          echo "${{ env.GITHUB_TARGET_REPOSITORY }}"
           ls -lthr
+          ls -lthr target
