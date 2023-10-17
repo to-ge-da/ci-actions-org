@@ -32,9 +32,16 @@ jobs:
           jq: latest
 
       - name: Check GitLab repository
+        id: gitlab-repo-exists
         run: |
-          curl \
-            -H "PRIVATE-TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}" \
-            -s "${{ env.GITLAB_API_URL }}/${{ env.GITLAB_PROJECT_ID }}" \
-            | jq -r '.name'
+          echo "GITLAB_OUTPUT=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.URL }}/${{ env.ID }}" | jq -r '.name')" >> $GITHUB_OUTPUT
         shell: bash
+        env:
+          ID: ${{ env.GITLAB_PROJECT_ID }}
+          URL: ${{ env.GITLAB_API_URL }}
+          TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
+
+      - name: Debug GitLab repository name
+        run: |
+          echo "GitLab repository name: ${{ steps.gitlab-repo-exists.outputs.GITLAB_OUTPUT }}"
+
