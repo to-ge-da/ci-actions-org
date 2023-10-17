@@ -88,11 +88,9 @@ jobs:
       - name: Rye sync
         run: rye sync --no-lock
 
-      - name: Enable Python virtualenv
-        run: source .venv/bin/activate
-
       - name: Create target repository in GitHub Org
         run: |
+          source .venv/bin/activate
           github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true
 
   migration-repository:
