@@ -13,15 +13,14 @@ on:
         required: false
         type: string
 
-env:
-  GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
-
 jobs:
   gitlab:
     name: GitLab Repository
     runs-on: ubuntu-latest
     env:
       GITLAB_API_URL: "https://gitlab.com/api/v4/projects"
+      GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
+      GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
 
     steps:
       - name: Checkout repository
@@ -36,5 +35,5 @@ jobs:
         run: |
           curl \
             -H "PRIVATE-TOKEN: ${GITLAB_AUTH_TOKEN}" \
-            -s "${GITLAB_API_URL}/23759432" | jq .
+            -s "${GITLAB_API_URL}/${{ env.GITLAB_PROJECT_ID }}" | jq .
         shell: bash
