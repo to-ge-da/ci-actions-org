@@ -14,7 +14,7 @@ on:
         type: string
 
 jobs:
-  gitlab:
+  fetch-gitlab:
     name: GitLab Repository
     runs-on: ubuntu-latest
     env:
@@ -32,7 +32,7 @@ jobs:
           jq: latest
 
       - name: Fetch information from the GitLab repository
-        id: fetch-gitlab
+        id: gitlab-fetch-data
         run: |
           echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
           echo "CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
@@ -43,15 +43,24 @@ jobs:
 
       - name: Debug GitLab repository name
         run: |
-          echo "GitLab repository name: ${{ steps.fetch-gitlab.outputs.REPO_NAME }}"
-          echo "GitLab repository clone url: ${{ steps.fetch-gitlab.outputs.CLONE_URL }}"
+          echo "GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}"
+          echo "GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}"
 
       - name: Clone GitLab repository
+        id: gitlab-clone-repo
         run: |
-          git clone --bare ${{ env.SOURCE_REPO }} -q
+          git clone --bare ${{ env.SOURCE_REPO_URL }} -q
+          echo "BARE_REPO_DIR=$(echo "${{ env.SOURCE_REPO_URL }}" | grep -oE '(/[^/]+){1}$' | cut -d "/" -f 2)" >> $GITHUB_OUTPUT
         env:
-          SOURCE_REPO: ${{ steps.fetch-gitlab.outputs.CLONE_URL }}
+          SOURCE_REPO_URL: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}
 
-      - name: Debug
-        run: ls -la
+      - name: Debug bare repository
+        run: |
+          echo "${{ env.BARE_DIR }}"
+          cd "${{ env.BARE_DIR }}" || exit
+          ls -lthr
+        env:
+          BARE_DIR: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
+
+
 
