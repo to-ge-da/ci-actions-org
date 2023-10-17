@@ -1,4 +1,4 @@
-name: Migrate repository
+name: Migrate GitLab repository
 run-name: Migrate repository from GitLab to GitHub by ${{ github.actor }}
 on:
   workflow_dispatch:
