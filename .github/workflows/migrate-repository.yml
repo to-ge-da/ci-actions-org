@@ -6,7 +6,6 @@ on:
       run-migrate:
         description: Migrate repository
         required: true
-        default: false
         type: boolean
       gitlab-project-id:
         description: |
