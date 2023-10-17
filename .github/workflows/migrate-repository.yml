@@ -52,22 +52,6 @@ jobs:
           echo "GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}"
           echo "GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}"
 
-      - name: Clone GitLab repository
-        id: gitlab-clone-repo
-        run: |
-          git clone --bare ${{ env.SOURCE_REPO_URL }} -q
-          echo "BARE_REPO_DIR=$(echo "${{ env.SOURCE_REPO_URL }}" | grep -oE '(/[^/]+){1}$' | cut -d "/" -f 2)" >> $GITHUB_OUTPUT
-        env:
-          SOURCE_REPO_URL: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}
-
-      - name: Debug bare repository
-        run: |
-          echo "${{ env.BARE_DIR }}"
-          cd "${{ env.BARE_DIR }}" || exit
-          ls -lthr
-        env:
-          BARE_DIR: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
-
   github-create-repo:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
@@ -116,9 +100,15 @@ jobs:
           token: ${{ env.GITHUB_AUTH_TOKEN }}
           path: target
 
-      - name: Debug this Job
+      - name: GitLab - Clone source repository
+        id: gitlab-clone-repo
         run: |
-          echo "${{ env.GITLAB_SOURCE_REPOSITORY }}"
-          echo "${{ env.GITHUB_TARGET_REPOSITORY }}"
-          ls -lthr
+          git clone --bare ${{ env.GITLAB_SOURCE_REPOSITORY }} -q
+          echo "BARE_REPO_DIR=$(echo "${{ env.GITLAB_SOURCE_REPOSITORY }}" | grep -oE '(/[^/]+){1}$' | cut -d "/" -f 2)" >> $GITHUB_OUTPUT
+
+      - name: GitHub - Push repository mirror
+        run: |
+          cd ${{ env.SOURCE_DIR }} || exit
           ls -lthr target
+        env:
+          SOURCE_DIR: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
