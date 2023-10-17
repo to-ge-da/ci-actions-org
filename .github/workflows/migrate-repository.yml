@@ -13,14 +13,20 @@ on:
         required: false
         type: string
 
+env:
+  GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
+  GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
+
 jobs:
-  fetch-gitlab:
-    name: GitLab Repository
+  gitlab-fetch-data:
+    name: Fetch data from GitLab repository
     runs-on: ubuntu-latest
     env:
       GITLAB_API_URL: "https://gitlab.com/api/v4/projects"
-      GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
       GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
+    outputs:
+      GITLAB_REPOSITORY_NAME: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}
+      GITLAB_REPOSITORY_CLONE_URL: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}
 
     steps:
       - name: Checkout repository
@@ -62,5 +68,34 @@ jobs:
         env:
           BARE_DIR: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
 
+  github-create-repo:
+    name: Create target GitHub repository
+    runs-on: ubuntu-latest
+    needs: gitlab-fetch-data
+    env:
+      GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_NAME }}
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      - name: Debug this Job
+        run: |
+          echo "${{ env.GITHUB_REPOSITORY_NAME }}"
+
+  migration-repository:
+    name: Migrate repository from GitLab to GitHub
+    runs-on: ubuntu-latest
+    needs: 
+      - gitlab-fetch-data
+      - github-create-repo
+    env:
+      GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_CLONE_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug this Job
+        run: |
+          echo "${{ env.GITLAB_SOURCE_REPOSITORY }}"
