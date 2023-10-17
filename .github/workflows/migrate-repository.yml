@@ -31,10 +31,11 @@ jobs:
         with:
           jq: latest
 
-      - name: Check GitLab repository
-        id: gitlab-repo-exists
+      - name: Fetch information from the GitLab repository
+        id: fetch-gitlab
         run: |
           echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
+          echo "CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
         shell: bash
         env:
           TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
@@ -42,5 +43,15 @@ jobs:
 
       - name: Debug GitLab repository name
         run: |
-          echo "GitLab repository name: ${{ steps.gitlab-repo-exists.outputs.REPO_NAME }}"
+          echo "GitLab repository name: ${{ steps.fetch-gitlab.outputs.REPO_NAME }}"
+          echo "GitLab repository clone url: ${{ steps.fetch-gitlab.outputs.CLONE_URL }}"
+
+      - name: Clone GitLab repository
+        run: |
+          git clone --bare ${{ env.SOURCE_REPO }} -q
+        env:
+          SOURCE_REPO: ${{ steps.fetch-gitlab.outputs.CLONE_URL }}
+
+      - name: Debug
+        run: ls -la
 
