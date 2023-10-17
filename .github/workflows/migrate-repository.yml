@@ -73,15 +73,27 @@ jobs:
     runs-on: ubuntu-latest
     needs: gitlab-fetch-data
     env:
+      GITHUB_ORG_NAME: to-ge-da
       GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_NAME }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          repository: lbrealdev/github-rest-api
 
-      - name: Debug this Job
+      - name: Setup rye
+        uses: eifinger/setup-rye@v1
+
+      - name: Rye sync
+        run: rye sync --no-lock
+
+      - name: Enable Python virtualenv
+        run: source .venv/bin/activate
+
+      - name: Create target repository in GitHub Org
         run: |
-          echo "${{ env.GITHUB_REPOSITORY_NAME }}"
+          github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true
 
   migration-repository:
     name: Migrate repository from GitLab to GitHub
@@ -95,8 +107,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          repository: lbrealdev/github-rest-api
 
       - name: Debug this Job
         run: |
