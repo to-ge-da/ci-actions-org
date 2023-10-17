@@ -95,7 +95,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          repository: lbrealdev/github-rest-api
 
       - name: Debug this Job
         run: |
           echo "${{ env.GITLAB_SOURCE_REPOSITORY }}"
+          ls -lthr
