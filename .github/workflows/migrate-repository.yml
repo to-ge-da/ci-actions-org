@@ -116,11 +116,10 @@ jobs:
 
       - name: GitHub - Set up branch in target repository
         run: |
-          ls -lthr
-          #git pull -q
-          #git checkout master -q
-          #git push origin master:main --force-with-lease
-          #git branch -f main origin/main -q
-          #git push -d origin master -q
-          #git checkout main -q
+          git pull -q
+          git checkout master -q
+          git push origin master:main --force-with-lease
+          git branch -f main origin/main -q
+          git push -d origin master -q
+          git checkout main -q
         working-directory: target
