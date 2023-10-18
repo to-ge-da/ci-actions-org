@@ -89,7 +89,7 @@ jobs:
         id: handle-output
         if: ${{ contains(steps.github-rest-api.outputs.OUTPUT, 'Repository name already exists') }}
         run: |
-          echo "### Error: ${{ steps.github-rest-api.outputs.OUTPUT }}"
+          echo "### Error: ${{ steps.github-rest-api.outputs.OUTPUT }}" >> $GITHUB_STEP_SUMMARY
           exit 1
           
   migration-repository:
@@ -143,4 +143,4 @@ jobs:
 
       - name: Generate final summary
         run: |
-          echo "### New GitHub repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
+          echo "### GitHub repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
