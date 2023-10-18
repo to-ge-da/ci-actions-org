@@ -15,6 +15,8 @@ on:
 
 env:
   GITHUB_URL: https://github.com
+  GITLAB_API_URL: "https://gitlab.com/api/v4"
+  GITHUB_ORG_NAME: to-ge-da
   GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
 
@@ -23,12 +25,11 @@ jobs:
     name: Fetch data from GitLab repository
     runs-on: ubuntu-latest
     env:
-      GITLAB_API_URL: "https://gitlab.com/api/v4/projects"
       GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
     outputs:
-      GITLAB_REPOSITORY_NAME: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}
-      GITLAB_REPOSITORY_CLONE_URL: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}
-      GITLAB_REPOSITORY_OWNER: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}
+      REPOSITORY_NAME: ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}
+      REPOSITORY_USER: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}
+      REPOSITORY_CLONE_URL: ${{ steps.gitlab-fetch-data.outputs.GITLAB_CLONE_URL }}
 
     steps:
       - name: Checkout repository
@@ -39,33 +40,36 @@ jobs:
         with:
           jq: latest
 
+      - name: Set up GitLab urls
+        run: |
+          echo "GITLAB_USER_URL=${GITLAB_API_URL/%/\/user}" >> "$GITHUB_ENV"
+          echo "GITLAB_PROJECT_URL=${GITLAB_API_URL/%/\/projects\/${GITLAB_PROJECT_ID}}" >> "$GITHUB_ENV"
+
       - name: Fetch information from the GitLab repository
         id: gitlab-fetch-data
         run: |
-          echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
-          echo "REPO_OWNER=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.owner.username')" >> $GITHUB_OUTPUT
-          echo "CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
+          echo "GITLAB_USERNAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.USER_URL }}" | jq -r '.username')" >> $GITHUB_OUTPUT
+          echo "GITLAB_REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
+          echo "GITLAB_CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
         shell: bash
         env:
           TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
-          REPO_URL: ${{ env.GITLAB_API_URL }}/${{ env.GITLAB_PROJECT_ID }}
-
+          USER_URL: ${{ env.GITLAB_USER_URL }}
+          REPO_URL: ${{ env.GITLAB_PROJECT_URL }}
+          
       - name: Debug GitLab repository name
         run: |
           echo "-------------------" >> $GITHUB_STEP_SUMMARY
-          echo "- GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}" >> $GITHUB_STEP_SUMMARY
-          echo "- GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.GITLAB_CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
           
   github-create-repo:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
     needs: gitlab-fetch-data
     env:
-      GITHUB_ORG_NAME: to-ge-da
-      GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_NAME }}
-    outputs:
-      GITHUB_FULL_NAME: ${{ env.GITHUB_ORG_NAME }}/${{ env.GITHUB_REPOSITORY_NAME }}
+      GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_NAME }}
 
     steps:
       - name: Checkout github-rest-api repository
@@ -99,9 +103,9 @@ jobs:
       - gitlab-fetch-data
       - github-create-repo
     env:
-      GITHUB_TARGET_REPOSITORY: ${{ needs.github-create-repo.outputs.GITHUB_FULL_NAME }}
-      GITLAB_OWNER_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_OWNER }}
-      GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_CLONE_URL }}
+      GITLAB_USERNAME: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_USER }}
+      GITHUB_TARGET_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_NAME }}
+      GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_CLONE_URL }}
 
     steps:
       - name: Checkout repository
@@ -114,21 +118,23 @@ jobs:
           token: ${{ env.GITHUB_AUTH_TOKEN }}
           path: target
 
+      - name: Set up GitHub url
+        run: |
+          echo "GITHUB_CLONE_URL=${GITHUB_URL/%/\/"${{ env.GITHUB_ORG_NAME }}"\/"${{ env.GITHUB_TARGET_REPOSITORY }}".git}" >> $GITHUB_ENV
+
       - name: GitLab - Clone source repository
         id: gitlab-clone-repo
         run: |
-          SOURCE_AUTH_URL=${GITLAB_SOURCE_REPOSITORY/https:\/\//https:\/\/"${{ env.GITLAB_OWNER_REPOSITORY }}":"${{ env.GITLAB_AUTH_TOKEN }}"@}
+          SOURCE_AUTH_URL=${GITLAB_SOURCE_REPOSITORY/https:\/\//https:\/\/"${{ env.GITLAB_USERNAME }}":"${{ env.GITLAB_AUTH_TOKEN }}"@}
           git clone --bare "$SOURCE_AUTH_URL" -q
-          echo "BARE_REPO_DIR=$(echo "${{ env.GITLAB_SOURCE_REPOSITORY }}" | grep -oE '(/[^/]+){1}$' | cut -d "/" -f 2)" >> $GITHUB_OUTPUT
-        env:
-          SOURCE_URL: ${{ env.GITLAB_SOURCE_REPOSITORY }}
+          echo "BARE_REPO_DIR=${SOURCE_AUTH_URL#*"${{ env.GITLAB_USERNAME }}"\/}" >> $GITHUB_OUTPUT
 
       - name: GitHub - Push repository mirror
         run: |
           TARGET_AUTH_URL=${TARGET_URL/https:\/\//https:\/\/"${{ env.GITHUB_AUTH_TOKEN }}"@}
           git push --mirror "$TARGET_AUTH_URL" -q |& : || true
         env:
-          TARGET_URL: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}.git
+          TARGET_URL: ${{ env.GITHUB_CLONE_URL }}
         working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
 
       - name: GitHub - Configure branch in target repository
@@ -143,4 +149,5 @@ jobs:
 
       - name: Generate final summary
         run: |
-          echo "### GitHub repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
+          GITHUB_FINAL_URL=${GITHUB_CLONE_URL::-4}
+          echo "### GitHub repository: $GITHUB_FINAL_URL" >> $GITHUB_STEP_SUMMARY
