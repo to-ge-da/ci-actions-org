@@ -108,7 +108,9 @@ jobs:
 
       - name: GitHub - Push repository mirror
         run: |
-          git push --mirror ${{ env.TARGET_URL }}
+          TARGET_AUTH_URL=${TARGET_URL/https:\/\//https:\/\/"${{ env.GITHUB_AUTH_TOKEN }}"@/}
+          echo "$TARGET_AUTH_URL"
+          #git push --mirror ${{ env.TARGET_URL }}
         env:
           TARGET_URL: https://github.com/${{ env.GITHUB_TARGET_REPOSITORY }}.git
         working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
