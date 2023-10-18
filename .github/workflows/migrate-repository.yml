@@ -108,8 +108,8 @@ jobs:
 
       - name: GitHub - Push repository mirror
         run: |
-          cd ${{ env.SOURCE_DIR }} || exit
           ls -lthr
-          pwd
+          git push --mirror ${{ env.TARGET_URL }} -q |& : || true
         env:
-          SOURCE_DIR: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
+          TARGET_URL: https://github.com/${{ env.GITHUB_TARGET_REPOSITORY }}
+        working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
