@@ -35,11 +35,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup arkade
-        uses: alexellis/arkade-get@master
-        with:
-          jq: latest
-
       - name: Set up GitLab urls
         run: |
           echo "GITLAB_USER_URL=${GITLAB_API_URL/%/\/user}" >> "$GITHUB_ENV"
