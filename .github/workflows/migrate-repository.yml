@@ -108,17 +108,18 @@ jobs:
 
       - name: GitHub - Push repository mirror
         run: |
-          git push --mirror ${{ env.TARGET_URL }} -q |& : || true
+          git push --mirror ${{ env.TARGET_URL }}
         env:
           TARGET_URL: https://github.com/${{ env.GITHUB_TARGET_REPOSITORY }}.git
         working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
 
       - name: GitHub - Set up branch in target repository
         run: |
-          git pull -q
-          git checkout master -q
-          git push origin:main --force-with-lease -q
-          git branch -f main origin/main -q
-          git push -d origin master -q
-          git checkout main -q
+          ls -lthr
+          #git pull -q
+          #git checkout master -q
+          #git push origin master:main --force-with-lease
+          #git branch -f main origin/main -q
+          #git push -d origin master -q
+          #git checkout main -q
         working-directory: target
