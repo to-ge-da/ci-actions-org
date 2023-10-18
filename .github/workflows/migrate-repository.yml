@@ -51,8 +51,10 @@ jobs:
 
       - name: Debug GitLab repository name
         run: |
+          echo "GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}"
           echo "GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}"
           echo "GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}"
+          
 
   github-create-repo:
     name: Create target GitHub repository
@@ -124,7 +126,7 @@ jobs:
         run: |
           git pull -q
           git checkout master -q
-          git push origin master:main --force-with-lease
+          git push origin master:main --force-with-lease -q
           git branch -f main origin/main -q
           git push -d origin master -q
           git checkout main -q
