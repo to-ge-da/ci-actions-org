@@ -27,6 +27,7 @@ jobs:
     outputs:
       GITLAB_REPOSITORY_NAME: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}
       GITLAB_REPOSITORY_CLONE_URL: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}
+      GITLAB_REPOSITORY_OWNER: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}
 
     steps:
       - name: Checkout repository
@@ -41,6 +42,7 @@ jobs:
         id: gitlab-fetch-data
         run: |
           echo "REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
+          echo "REPO_OWNER=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.owner.username')" >> $GITHUB_OUTPUT
           echo "CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
         shell: bash
         env:
@@ -86,14 +88,15 @@ jobs:
       - gitlab-fetch-data
       - github-create-repo
     env:
-      GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_CLONE_URL }}
       GITHUB_TARGET_REPOSITORY: ${{ needs.github-create-repo.outputs.GITHUB_FULL_NAME }}
+      GITLAB_OWNER_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_OWNER }}
+      GITLAB_SOURCE_REPOSITORY: ${{ needs.gitlab-fetch-data.outputs.GITLAB_REPOSITORY_CLONE_URL }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout GitHub target repository
+      - name: Checkout target repository
         uses: actions/checkout@v4
         with:
           repository: ${{ env.GITHUB_TARGET_REPOSITORY }}
@@ -103,8 +106,11 @@ jobs:
       - name: GitLab - Clone source repository
         id: gitlab-clone-repo
         run: |
-          git clone --bare ${{ env.GITLAB_SOURCE_REPOSITORY }} -q
+          SOURCE_AUTH_URL=${GITLAB_SOURCE_REPOSITORY/https:\/\//https:\/\/"${{ env.GITLAB_OWNER_REPOSITORY }}":"${{ env.GITLAB_AUTH_TOKEN }}"@}
+          git clone --bare "$SOURCE_AUTH_URL" -q
           echo "BARE_REPO_DIR=$(echo "${{ env.GITLAB_SOURCE_REPOSITORY }}" | grep -oE '(/[^/]+){1}$' | cut -d "/" -f 2)" >> $GITHUB_OUTPUT
+        env:
+          SOURCE_URL: ${{ env.GITLAB_SOURCE_REPOSITORY }}
 
       - name: GitHub - Push repository mirror
         run: |
@@ -114,7 +120,7 @@ jobs:
           TARGET_URL: https://github.com/${{ env.GITHUB_TARGET_REPOSITORY }}.git
         working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
 
-      - name: GitHub - Set up branch in target repository
+      - name: GitHub - Configure branch in target repository
         run: |
           git pull -q
           git checkout master -q
