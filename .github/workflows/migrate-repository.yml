@@ -87,7 +87,7 @@ jobs:
 
       - name: GitHub - Repository output
         id: handle-output
-        if: ${{ ! contains(steps.github-rest-api.outputs.OUTPUT, 'Repository name already exists') }}
+        if: ${{ contains(steps.github-rest-api.outputs.OUTPUT, 'Repository name already exists') }}
         run: |
           echo "### Error: ${{ steps.github-rest-api.outputs.OUTPUT }}"
           exit 1
