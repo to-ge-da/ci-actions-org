@@ -14,6 +14,7 @@ on:
         type: string
 
 env:
+  GITHUB_URL: https://github.com
   GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
 
@@ -51,11 +52,10 @@ jobs:
 
       - name: Debug GitLab repository name
         run: |
-          echo "GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}"
-          echo "GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}"
-          echo "GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}"
+          echo "### GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}" >> $GITHUB_STEP_SUMMARY
+          echo "### GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "### GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
           
-
   github-create-repo:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
@@ -119,7 +119,7 @@ jobs:
           TARGET_AUTH_URL=${TARGET_URL/https:\/\//https:\/\/"${{ env.GITHUB_AUTH_TOKEN }}"@}
           git push --mirror "$TARGET_AUTH_URL" -q |& : || true
         env:
-          TARGET_URL: https://github.com/${{ env.GITHUB_TARGET_REPOSITORY }}.git
+          TARGET_URL: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}.git
         working-directory: ${{ steps.gitlab-clone-repo.outputs.BARE_REPO_DIR }}
 
       - name: GitHub - Configure branch in target repository
@@ -131,3 +131,7 @@ jobs:
           git push -d origin master -q
           git checkout main -q
         working-directory: target
+
+      - name: Generate final summary
+        run: |
+          echo "### New repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
