@@ -108,7 +108,7 @@ jobs:
 
       - name: GitHub - Push repository mirror
         run: |
-          TARGET_AUTH_URL=${TARGET_URL/https:\/\//https:\/\/"${{ env.GITHUB_AUTH_TOKEN }}"@/}
+          TARGET_AUTH_URL=${TARGET_URL/https:\/\//https:\/\/"${{ env.GITHUB_AUTH_TOKEN }}"@}
           echo "$TARGET_AUTH_URL"
           #git push --mirror ${{ env.TARGET_URL }}
         env:
