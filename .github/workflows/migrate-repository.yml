@@ -54,7 +54,6 @@ jobs:
           
       - name: Debug GitLab repository name
         run: |
-          echo "-------------------" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.GITLAB_CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
