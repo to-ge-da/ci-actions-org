@@ -10,7 +10,7 @@ on:
       gitlab-project-id:
         description: |
           GitLab project ID
-        required: false
+        required: true
         type: string
 
 env:
@@ -53,9 +53,9 @@ jobs:
       - name: Debug GitLab repository name
         run: |
           echo "-------------------" >> $GITHUB_STEP_SUMMARY
-          echo "GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}" >> $GITHUB_STEP_SUMMARY
-          echo "GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository owner: ${{ steps.gitlab-fetch-data.outputs.REPO_OWNER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
           
   github-create-repo:
     name: Create target GitHub repository
@@ -79,11 +79,19 @@ jobs:
       - name: Rye sync
         run: rye sync --no-lock
 
-      - name: Create target repository in GitHub Org
+      - name: GitHub - Create target repository in GitHub Org
+        id: github-rest-api
         run: |
           source .venv/bin/activate
-          github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true
+          echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true)" >> $GITHUB_OUTPUT
 
+      - name: GitHub - Repository output
+        id: handle-output
+        if: ${{ ! contains(steps.github-rest-api.outputs.OUTPUT, 'Repository name already exists') }}
+        run: |
+          echo "### Error: ${{ steps.github-rest-api.outputs.OUTPUT }}"
+          exit 1
+          
   migration-repository:
     name: Migrate repository from GitLab to GitHub
     runs-on: ubuntu-latest
