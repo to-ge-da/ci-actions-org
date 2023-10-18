@@ -39,6 +39,8 @@ jobs:
         with:
           jq: latest
 
+      - run: rm $GITHUB_STEP_SUMMARY
+
       - name: Fetch information from the GitLab repository
         id: gitlab-fetch-data
         run: |
@@ -134,4 +136,4 @@ jobs:
 
       - name: Generate final summary
         run: |
-          echo "### New repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
+          echo "### New GitHub repository: ${{ env.GITHUB_URL }}/${{ env.GITHUB_TARGET_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
