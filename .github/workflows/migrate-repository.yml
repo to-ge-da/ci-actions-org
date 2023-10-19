@@ -120,8 +120,8 @@ jobs:
         id: gitlab-clone-repo
         run: |
           SOURCE_AUTH_URL=${GITLAB_SOURCE_REPOSITORY/https:\/\//https:\/\/"${{ env.GITLAB_USERNAME }}":"${{ env.GITLAB_AUTH_TOKEN }}"@}
-          git clone --bare "$SOURCE_AUTH_URL" -q
           echo "BARE_REPO_DIR=${SOURCE_AUTH_URL#*"${{ env.GITLAB_USERNAME }}"\/}" >> $GITHUB_OUTPUT
+          git clone --bare "$SOURCE_AUTH_URL" -q
 
       - name: GitHub - Push repository mirror
         run: |
