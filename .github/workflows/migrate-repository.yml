@@ -61,6 +61,7 @@ jobs:
   github-create-repo:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
+    if: inputs.run-migrate
     needs: gitlab-fetch-data
     env:
       GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_NAME }}
@@ -93,6 +94,7 @@ jobs:
   migration-repository:
     name: Migrate repository from GitLab to GitHub
     runs-on: ubuntu-latest
+    if: inputs.run-migrate
     needs: 
       - gitlab-fetch-data
       - github-create-repo
