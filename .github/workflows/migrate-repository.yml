@@ -82,7 +82,7 @@ jobs:
         id: github-rest-api
         run: |
           source .venv/bin/activate
-          echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true)" >> $GITHUB_OUTPUT
+          echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v private)" >> $GITHUB_OUTPUT
 
       - name: GitHub - Repository output
         id: handle-output
