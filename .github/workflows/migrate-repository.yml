@@ -11,7 +11,7 @@ on:
         type: boolean
       run-migrate:
         description: |
-          Migrate repository
+          Migrate repository from GitLab to GitHub
         required: true
         type: boolean
       gitlab-project-id:
@@ -27,6 +27,16 @@ on:
         options:
           - org
           - user
+      github-repository-visibility:
+        description: |
+          GitHub repository visibility
+        required: false
+        default: private
+        type: choice
+        options:
+          - public
+          - private
+          - internal (Org)
 
 env:
   GITHUB_URL: https://github.com
@@ -100,7 +110,9 @@ jobs:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
     if: inputs.run-migrate
-    needs: gitlab-fetch-data
+    needs: 
+      - github-fetch-data
+      - gitlab-fetch-data
     env:
       GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_NAME }}
 
@@ -134,6 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     if: inputs.run-migrate
     needs: 
+      - github-fetch-data
       - gitlab-fetch-data
       - github-create-repo
     env:
