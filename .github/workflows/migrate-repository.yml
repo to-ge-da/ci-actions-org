@@ -41,12 +41,13 @@ jobs:
         run: echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
 
       - name: GitHub - Get currently authenticated user
+        id: github-auth-login
         run: |
           echo "GITHUB_VIEWER=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')" >> "$GITHUB_OUTPUT"
 
-      - name: Generate final summary
+      - name: Generate summary
         run: |
-          echo "- GitHub user: ${{ steps.github-fetch-data.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
 
   gitlab-fetch-data:
     name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
