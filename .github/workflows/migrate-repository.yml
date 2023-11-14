@@ -12,6 +12,14 @@ on:
           GitLab project ID
         required: true
         type: string
+      github-account-type:
+        description: |
+          GitHub account type
+        required: true
+        type: choice
+        options:
+          - org
+          - user
 
 env:
   GITHUB_URL: https://github.com
@@ -22,7 +30,7 @@ env:
 
 jobs:
   gitlab-fetch-data:
-    name: Fetch data from GitLab repository
+    name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
     runs-on: ubuntu-latest
     env:
       GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
