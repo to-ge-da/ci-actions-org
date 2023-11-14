@@ -6,6 +6,7 @@ on:
       fetch-data:
         description: |
           Fetch data from GitLab and GitHub
+        default: true
         required: true
         type: boolean
       run-migrate:
