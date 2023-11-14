@@ -29,6 +29,18 @@ env:
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
 
 jobs:
+  github-fetch-data:
+    name: Fetch data from GitHub authenticated user
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: GitHub CLI login
+        run: |
+          echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
+
   gitlab-fetch-data:
     name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
     runs-on: ubuntu-latest
