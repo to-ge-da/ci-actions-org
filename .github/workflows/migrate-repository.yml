@@ -23,14 +23,15 @@ on:
         description: |
           GitHub account type
         required: true
-        default: ''
         type: choice
         options:
           - GitHub Org
           - GitHub User
-      github-organizatio:
+      github-organization:
         description: |
           GitHub organization
+        required: true
+        type: string
       github-repository-visibility:
         description: |
           GitHub repository visibility
