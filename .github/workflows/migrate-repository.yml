@@ -41,7 +41,12 @@ jobs:
         run: echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
 
       - name: GitHub - Get currently authenticated user
-        run: gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login'
+        run: |
+          echo "GITHUB_USERNAME=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')" >> "$GITHUB_OUTPUT"
+
+      - name: Generate final summary
+        run: |
+          echo "- GitHub user: ${{ steps.github-fetch-data.outputs.GITHUB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
 
   gitlab-fetch-data:
     name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
@@ -66,9 +71,9 @@ jobs:
       - name: Fetch information from the GitLab repository
         id: gitlab-fetch-data
         run: |
-          echo "GITLAB_USERNAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.USER_URL }}" | jq -r '.username')" >> $GITHUB_OUTPUT
-          echo "GITLAB_REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
-          echo "GITLAB_CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
+          echo "GITLAB_USERNAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.USER_URL }}" | jq -r '.username')" >> "$GITHUB_OUTPUT"
+          echo "GITLAB_REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> "$GITHUB_OUTPUT"
+          echo "GITLAB_CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> "$GITHUB_OUTPUT"
         shell: bash
         env:
           TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
