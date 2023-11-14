@@ -23,10 +23,14 @@ on:
         description: |
           GitHub account type
         required: true
+        default: ''
         type: choice
         options:
-          - org
-          - user
+          - GitHub Org
+          - GitHub User
+      github-organizatio:
+        description: |
+          GitHub organization
       github-repository-visibility:
         description: |
           GitHub repository visibility
@@ -36,7 +40,7 @@ on:
         options:
           - public
           - private
-          - internal (Org)
+          - internal (Organization only)
 
 env:
   GITHUB_URL: https://github.com
