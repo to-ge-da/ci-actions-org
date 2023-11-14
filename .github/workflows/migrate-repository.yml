@@ -39,6 +39,7 @@ jobs:
   github-fetch-data:
     name: Fetch data from GitHub
     runs-on: ubuntu-latest
+    if: inputs.fetch-data
 
     steps:
       - name: Checkout repository
@@ -59,6 +60,7 @@ jobs:
   gitlab-fetch-data:
     name: Fetch data from GitLab
     runs-on: ubuntu-latest
+    if: inputs.fetch-data
     needs: github-fetch-data
     env:
       GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
