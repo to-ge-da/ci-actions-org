@@ -46,10 +46,9 @@ jobs:
           gh api graphql -f query='
           query {
             viewer {
-              name
               login
             }
-          }'
+          }' | jq -r '.data.viewer.login'
 
   gitlab-fetch-data:
     name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
