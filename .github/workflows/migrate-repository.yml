@@ -3,8 +3,14 @@ run-name: Migrate repository from GitLab to GitHub by ${{ github.actor }}
 on:
   workflow_dispatch:
     inputs:
+      fetch-data:
+        description: |
+          Fetch data from GitLab and GitHub
+        required: true
+        type: boolean
       run-migrate:
-        description: Migrate repository
+        description: |
+          Migrate repository
         required: true
         type: boolean
       gitlab-project-id:
@@ -47,7 +53,7 @@ jobs:
 
       - name: Generate summary
         run: |
-          echo "- GitHub user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub authenticated user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
 
   gitlab-fetch-data:
     name: Fetch data from GitLab
@@ -83,7 +89,7 @@ jobs:
           
       - name: Generate final summary
         run: |
-          echo "- GitLab user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab authenticated user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab repository name (source repository): ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.GITLAB_CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
           
