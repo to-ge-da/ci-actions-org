@@ -41,14 +41,15 @@ jobs:
         run: |
           echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
 
-      - name: GitHub - Get the currently authenticated user
+      - name: GitHub - Get currently authenticated user
         run: |
-          gh api graphql -f query='
-          query {
-            viewer {
-              login
-            }
-          }' | jq -r '.data.viewer.login'
+          gh api graphql --jq '.data.viewer.login' \
+            -f query='
+                  query {
+                    viewer {
+                      login
+                    }
+                  }'
 
   gitlab-fetch-data:
     name: "Fetch data from GitLab repository ID: ${{ inputs.gitlab-project-id }}"
