@@ -46,7 +46,7 @@ on:
 env:
   GITHUB_URL: https://github.com
   GITLAB_API_URL: "https://gitlab.com/api/v4"
-  GITHUB_ORG_NAME: to-ge-da
+  GITHUB_ORG_NAME: ${{ inputs.github-organization }}
   GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
 
