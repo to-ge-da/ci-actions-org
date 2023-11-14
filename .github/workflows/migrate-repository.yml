@@ -30,7 +30,7 @@ on:
       github-repository-visibility:
         description: |
           GitHub repository visibility
-        required: false
+        required: true
         default: private
         type: choice
         options:
@@ -132,7 +132,15 @@ jobs:
         id: github-rest-api
         run: |
           source .venv/bin/activate
-          echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v private)" >> $GITHUB_OUTPUT
+          if [[ "$VISIBILITY" == "private" ]]; then
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v private)" >> $GITHUB_OUTPUT
+          elif [[ "$VISIBILITY" == "internal" ]]; then
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v internal)" >> $GITHUB_OUTPUT
+          else
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v public)" >> $GITHUB_OUTPUT
+          fi
+        env:
+          VISIBILITY: ${{ inputs.github-repository-visibility }}
 
       - name: GitHub - Repository output
         id: handle-output
