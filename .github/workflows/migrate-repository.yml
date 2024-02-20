@@ -53,7 +53,7 @@ env:
 jobs:
   github-fetch-data:
     name: Fetch data from GitHub
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
     if: inputs.fetch-data
 
     steps:
