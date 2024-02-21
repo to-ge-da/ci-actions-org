@@ -1,10 +1,17 @@
-name: Migrate GitLab repository
+name: Migrate repository from GitLab to GitHub
 run-name: Migrate repository from GitLab to GitHub by ${{ github.actor }}
 on:
   workflow_dispatch:
     inputs:
+      fetch-data:
+        description: |
+          Fetch data from GitLab and GitHub
+        default: true
+        required: true
+        type: boolean
       run-migrate:
-        description: Migrate repository
+        description: |
+          Migrate repository from GitLab to GitHub
         required: true
         type: boolean
       gitlab-project-id:
@@ -12,18 +19,64 @@ on:
           GitLab project ID
         required: true
         type: string
+      github-account-type:
+        description: |
+          GitHub account type
+        required: true
+        type: choice
+        options:
+          - GitHub Org
+          - GitHub User
+      github-organization:
+        description: |
+          GitHub organization
+        required: true
+        type: string
+      github-repository-visibility:
+        description: |
+          GitHub repository visibility
+        required: true
+        default: private
+        type: choice
+        options:
+          - public
+          - private
+          - internal (Organization only)
 
 env:
   GITHUB_URL: https://github.com
   GITLAB_API_URL: "https://gitlab.com/api/v4"
-  GITHUB_ORG_NAME: to-ge-da
+  GITHUB_ORG_NAME: ${{ inputs.github-organization }}
   GITHUB_AUTH_TOKEN: ${{ secrets.GH_TOKEN_WORKFLOW }}
   GITLAB_AUTH_TOKEN: ${{ secrets.GL_AUTH_TOKEN }}
 
 jobs:
-  gitlab-fetch-data:
-    name: Fetch data from GitLab repository
+  github-fetch-data:
+    name: Fetch data from GitHub
     runs-on: ubuntu-latest
+    if: inputs.fetch-data
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: GitHub - CLI auth login
+        run: echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
+
+      - name: GitHub - Get currently authenticated user
+        id: github-auth-login
+        run: |
+          echo "GITHUB_VIEWER=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')" >> $GITHUB_OUTPUT
+
+      - name: Generate summary
+        run: |
+          echo "- GitHub authenticated user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
+
+  gitlab-fetch-data:
+    name: Fetch data from GitLab
+    runs-on: ubuntu-latest
+    if: inputs.fetch-data
+    needs: github-fetch-data
     env:
       GITLAB_PROJECT_ID: ${{ inputs.gitlab-project-id }}
     outputs:
@@ -43,25 +96,28 @@ jobs:
       - name: Fetch information from the GitLab repository
         id: gitlab-fetch-data
         run: |
-          echo "GITLAB_USERNAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.USER_URL }}" | jq -r '.username')" >> $GITHUB_OUTPUT
-          echo "GITLAB_REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> $GITHUB_OUTPUT
-          echo "GITLAB_CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> $GITHUB_OUTPUT
+          echo "GITLAB_USERNAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.USER_URL }}" | jq -r '.username')" >> "$GITHUB_OUTPUT"
+          echo "GITLAB_REPO_NAME=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.name')" >> "$GITHUB_OUTPUT"
+          echo "GITLAB_CLONE_URL=$(curl -H "PRIVATE-TOKEN: ${{ env.TOKEN }}" -s "${{ env.REPO_URL }}" | jq -r '.http_url_to_repo')" >> "$GITHUB_OUTPUT"
         shell: bash
         env:
           TOKEN: ${{ env.GITLAB_AUTH_TOKEN }}
           USER_URL: ${{ env.GITLAB_USER_URL }}
           REPO_URL: ${{ env.GITLAB_PROJECT_URL }}
           
-      - name: Debug GitLab repository name
+      - name: Generate final summary
         run: |
-          echo "- GitLab user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- GitLab repository name: ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab authenticated user: ${{ steps.gitlab-fetch-data.outputs.GITLAB_USERNAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- GitLab repository name (source repository): ${{ steps.gitlab-fetch-data.outputs.GITLAB_REPO_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- GitLab repository clone url: ${{ steps.gitlab-fetch-data.outputs.GITLAB_CLONE_URL }}" >> $GITHUB_STEP_SUMMARY
           
   github-create-repo:
     name: Create target GitHub repository
     runs-on: ubuntu-latest
-    needs: gitlab-fetch-data
+    if: inputs.run-migrate
+    needs: 
+      - github-fetch-data
+      - gitlab-fetch-data
     env:
       GITHUB_REPOSITORY_NAME: ${{ needs.gitlab-fetch-data.outputs.REPOSITORY_NAME }}
 
@@ -81,7 +137,15 @@ jobs:
         id: github-rest-api
         run: |
           source .venv/bin/activate
-          echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -p true)" >> $GITHUB_OUTPUT
+          if [[ "$VISIBILITY" == "private" ]]; then
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v private)" >> $GITHUB_OUTPUT
+          elif [[ "$VISIBILITY" == "internal" ]]; then
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v internal)" >> $GITHUB_OUTPUT
+          else
+            echo "OUTPUT=$(github-rest-api create-repo -n ${{ env.GITHUB_REPOSITORY_NAME }} -o ${{ env.GITHUB_ORG_NAME }} -v public)" >> $GITHUB_OUTPUT
+          fi
+        env:
+          VISIBILITY: ${{ inputs.github-repository-visibility }}
 
       - name: GitHub - Repository output
         id: handle-output
@@ -93,7 +157,9 @@ jobs:
   migration-repository:
     name: Migrate repository from GitLab to GitHub
     runs-on: ubuntu-latest
+    if: inputs.run-migrate
     needs: 
+      - github-fetch-data
       - gitlab-fetch-data
       - github-create-repo
     env:
