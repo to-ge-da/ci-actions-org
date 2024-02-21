@@ -60,17 +60,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: GitHub - CLI auth login
-        run: echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
+      #- name: GitHub - CLI auth login
+      #  run: echo "${{ env.GITHUB_AUTH_TOKEN }}" | gh auth login --with-token
 
-      - name: GitHub - Get currently authenticated user
-        id: github-auth-login
-        run: |
-          echo "GITHUB_VIEWER=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')" >> "$GITHUB_OUTPUT"
+      #- name: GitHub - Get currently authenticated user
+      #  id: github-auth-login
+      #  run: |
+      #    echo "GITHUB_VIEWER=$(gh api graphql -f query='query { viewer { login } }' --jq '.data.viewer.login')" >> "$GITHUB_OUTPUT"
 
-      - name: Generate summary
-        run: |
-          echo "- GitHub authenticated user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
+      #- name: Generate summary
+      #  run: |
+      #    echo "- GitHub authenticated user: ${{ steps.github-auth-login.outputs.GITHUB_VIEWER }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: TEST - Arkade
+        uses: alexellis/arkade-get@master
+        with:
+          gh: latest
 
   gitlab-fetch-data:
     name: Fetch data from GitLab
